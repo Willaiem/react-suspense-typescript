@@ -1,17 +1,16 @@
-// Cache resources
-// http://localhost:3000/isolated/final/04.js
+// useTransition for improved loading states
+// http://localhost:3000/isolated/final/03.js
 
 import * as React from 'react'
 import {
-  fetchPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  PokemonErrorBoundary,
+  fetchPokemon, PokemonDataView,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
-import {createResource} from '../utils'
+import { createResource } from '../utils'
 
-function PokemonInfo({pokemonResource}) {
+type PokemonResource = ReturnType<typeof createPokemonResource>
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
   const pokemon = pokemonResource.read()
   return (
     <div>
@@ -23,32 +22,14 @@ function PokemonInfo({pokemonResource}) {
   )
 }
 
-const SUSPENSE_CONFIG = {
-  timeoutMs: 4000,
-  busyDelayMs: 300,
-  busyMinDurationMs: 700,
-}
-
-const pokemonResourceCache = {}
-
-function getPokemonResource(name) {
-  const lowerName = name.toLowerCase()
-  let resource = pokemonResourceCache[lowerName]
-  if (!resource) {
-    resource = createPokemonResource(lowerName)
-    pokemonResourceCache[lowerName] = resource
-  }
-  return resource
-}
-
-function createPokemonResource(pokemonName) {
+function createPokemonResource(pokemonName: string) {
   return createResource(fetchPokemon(pokemonName))
 }
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
-  const [pokemonResource, setPokemonResource] = React.useState(null)
+  const [isPending, startTransition] = React.useTransition()
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
@@ -56,11 +37,11 @@ function App() {
       return
     }
     startTransition(() => {
-      setPokemonResource(getPokemonResource(pokemonName))
+      setPokemonResource(createPokemonResource(pokemonName))
     })
   }, [pokemonName, startTransition])
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 
@@ -72,7 +53,7 @@ function App() {
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
-      <div className={`pokemon-info ${isPending ? 'pokemon-loading' : ''}`}>
+      <div style={{ opacity: isPending ? 0.6 : 1 }} className="pokemon-info">
         {pokemonResource ? (
           <PokemonErrorBoundary
             onReset={handleReset}

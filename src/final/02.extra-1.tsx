@@ -4,15 +4,15 @@
 
 import * as React from 'react'
 import {
-  fetchPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  PokemonErrorBoundary,
+  fetchPokemon, PokemonDataView,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
-import {createResource} from '../utils'
+import { createResource } from '../utils'
 
-function PokemonInfo({pokemonResource}) {
+type PokemonResource = ReturnType<typeof createPokemonResource>
+
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
   const pokemon = pokemonResource.read()
   return (
     <div>
@@ -24,13 +24,13 @@ function PokemonInfo({pokemonResource}) {
   )
 }
 
-function createPokemonResource(pokemonName) {
+function createPokemonResource(pokemonName: string) {
   return createResource(fetchPokemon(pokemonName))
 }
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
-  const [pokemonResource, setPokemonResource] = React.useState(null)
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
@@ -40,7 +40,7 @@ function App() {
     setPokemonResource(createPokemonResource(pokemonName))
   }, [pokemonName])
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 

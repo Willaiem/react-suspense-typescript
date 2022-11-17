@@ -3,10 +3,11 @@
 // http://localhost:3000/isolated/final/01.extra-1.js
 
 import * as React from 'react'
-import {fetchPokemon, PokemonDataView, PokemonErrorBoundary} from '../pokemon'
+import { PokemonData } from 'types'
+import { fetchPokemon, PokemonDataView, PokemonErrorBoundary } from '../pokemon'
 
-let pokemon
-let pokemonError
+let pokemon: PokemonData | undefined
+let pokemonError: Error | undefined
 let pokemonPromise = fetchPokemon('pikachu').then(
   p => (pokemon = p),
   e => (pokemonError = e),

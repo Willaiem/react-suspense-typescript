@@ -1,17 +1,12 @@
 // Suspense Image
-// 💯 avoid waterfall
-// http://localhost:3000/isolated/final/05.extra-1.js
+// http://localhost:3000/isolated/final/05.js
 
 import * as React from 'react'
 import {
-  fetchPokemon,
-  getImageUrlForPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  PokemonErrorBoundary,
+  fetchPokemon, PokemonDataView,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
-import {createResource} from '../utils'
+import { createResource } from '../utils'
 
 // ❗❗❗❗
 // 🦉 On this one, make sure that you UNCHECK the "Disable cache" checkbox
@@ -19,35 +14,47 @@ import {createResource} from '../utils'
 // approach to work!
 // ❗❗❗❗
 
-function preloadImage(src) {
-  return new Promise(resolve => {
+function preloadImage(src: string) {
+  return new Promise<string>(resolve => {
     const img = document.createElement('img')
     img.src = src
     img.onload = () => resolve(src)
   })
 }
 
-function PokemonInfo({pokemonResource}) {
-  const pokemon = pokemonResource.data.read()
+type ImgResource = ReturnType<typeof createResource<string>>
+
+const imgSrcResourceCache: Record<string, ImgResource> = {}
+
+type ImgProps = JSX.IntrinsicElements['img'] & {
+  src: string
+}
+
+function Img({ src, alt, ...props }: ImgProps) {
+  let imgSrcResource = imgSrcResourceCache[src]
+  if (!imgSrcResource) {
+    imgSrcResource = createResource(preloadImage(src))
+    imgSrcResourceCache[src] = imgSrcResource
+  }
+  return <img src={imgSrcResource.read()} alt={alt} {...props} />
+}
+type PokemonResource = ReturnType<typeof createPokemonResource>
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
+  const pokemon = pokemonResource.read()
   return (
     <div>
       <div className="pokemon-info__img-wrapper">
-        <img src={pokemonResource.image.read()} alt={pokemon.name} />
+        <Img src={pokemon.image} alt={pokemon.name} />
       </div>
       <PokemonDataView pokemon={pokemon} />
     </div>
   )
 }
 
-const SUSPENSE_CONFIG = {
-  timeoutMs: 4000,
-  busyDelayMs: 300,
-  busyMinDurationMs: 700,
-}
+const pokemonResourceCache: Record<string, PokemonResource> = {}
 
-const pokemonResourceCache = {}
-
-function getPokemonResource(name) {
+function getPokemonResource(name: string) {
   const lowerName = name.toLowerCase()
   let resource = pokemonResourceCache[lowerName]
   if (!resource) {
@@ -57,16 +64,14 @@ function getPokemonResource(name) {
   return resource
 }
 
-function createPokemonResource(pokemonName) {
-  const data = createResource(fetchPokemon(pokemonName))
-  const image = createResource(preloadImage(getImageUrlForPokemon(pokemonName)))
-  return {data, image}
+function createPokemonResource(pokemonName: string) {
+  return createResource(fetchPokemon(pokemonName))
 }
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
-  const [pokemonResource, setPokemonResource] = React.useState(null)
+  const [isPending, startTransition] = React.useTransition()
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
@@ -78,7 +83,7 @@ function App() {
     })
   }, [pokemonName, startTransition])
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 

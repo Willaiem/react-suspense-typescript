@@ -1,45 +1,33 @@
-// Refactor useEffect to Suspense
-// http://localhost:3000/isolated/final/02.js
+// Suspense with a custom hook
+// 💯 use the usePokemonResource pre-built hook
+// http://localhost:3000/isolated/final/06.extra-1.js
 
 import * as React from 'react'
 import {
-  fetchPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
   PokemonDataView,
-  PokemonErrorBoundary,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback, usePokemonResource
 } from '../pokemon'
-import {createResource} from '../utils'
 
-function PokemonInfo({pokemonResource}) {
-  const pokemon = pokemonResource.read()
+type PokemonResource = ReturnType<typeof usePokemonResource>['0']
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
+  const pokemon = pokemonResource?.data.read()
   return (
     <div>
       <div className="pokemon-info__img-wrapper">
-        <img src={pokemon.image} alt={pokemon.name} />
+        <img src={pokemonResource?.image.read()} alt={pokemon?.name} />
       </div>
-      <PokemonDataView pokemon={pokemon} />
+      {pokemon && <PokemonDataView pokemon={pokemon} />}
     </div>
   )
 }
 
-function createPokemonResource(pokemonName) {
-  return createResource(fetchPokemon(pokemonName))
-}
-
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
-  const [pokemonResource, setPokemonResource] = React.useState(null)
 
-  React.useEffect(() => {
-    if (!pokemonName) {
-      setPokemonResource(null)
-      return
-    }
-    setPokemonResource(createPokemonResource(pokemonName))
-  }, [pokemonName])
+  const [pokemonResource, isPending] = usePokemonResource(pokemonName)
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 
@@ -51,7 +39,7 @@ function App() {
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
-      <div className="pokemon-info">
+      <div className={`pokemon-info ${isPending ? 'pokemon-loading' : ''}`}>
         {pokemonResource ? (
           <PokemonErrorBoundary
             onReset={handleReset}

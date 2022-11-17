@@ -5,11 +5,9 @@
 import * as React from 'react'
 import {
   fetchPokemon,
-  PokemonDataView,
-  PokemonInfoFallback,
-  PokemonErrorBoundary,
+  PokemonDataView, PokemonErrorBoundary, PokemonInfoFallback
 } from '../pokemon'
-import {createResource} from '../utils'
+import { createResource } from '../utils'
 
 let pokemonResource = createResource(fetchPokemon('pikachu'))
 

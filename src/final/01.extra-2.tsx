@@ -3,12 +3,13 @@
 // http://localhost:3000/isolated/final/01.extra-2.js
 
 import * as React from 'react'
-import {fetchPokemon, PokemonDataView, PokemonErrorBoundary} from '../pokemon'
+import { fetchPokemon, PokemonDataView, PokemonErrorBoundary } from '../pokemon'
 
 let pokemonResource = createResource(fetchPokemon('pikachu'))
 
-function createResource(promise) {
-  let status = 'pending'
+function createResource<T>(promise: Promise<T>) {
+  let status: 'pending' | 'success' | 'error' = 'pending'
+
   let result = promise.then(
     resolved => {
       status = 'success'
@@ -18,7 +19,8 @@ function createResource(promise) {
       status = 'error'
       result = rejected
     },
-  )
+  ) as T
+
   return {
     read() {
       if (status === 'pending') throw result

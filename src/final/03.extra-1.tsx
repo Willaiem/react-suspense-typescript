@@ -1,34 +1,49 @@
-// Suspense with a custom hook
-// 💯 use the usePokemonResource pre-built hook
-// http://localhost:3000/isolated/final/06.extra-1.js
+// useTransition for improved loading states
+// 💯 use css transitions
+// http://localhost:3000/isolated/final/03.extra-1.js
 
 import * as React from 'react'
 import {
-  usePokemonResource,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  PokemonErrorBoundary,
+  fetchPokemon, PokemonDataView,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
+import { createResource } from '../utils'
 
-function PokemonInfo({pokemonResource}) {
-  const pokemon = pokemonResource.data.read()
+type PokemonResource = ReturnType<typeof createPokemonResource>
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
+  const pokemon = pokemonResource.read()
   return (
     <div>
       <div className="pokemon-info__img-wrapper">
-        <img src={pokemonResource.image.read()} alt={pokemon.name} />
+        <img src={pokemon.image} alt={pokemon.name} />
       </div>
       <PokemonDataView pokemon={pokemon} />
     </div>
   )
 }
 
+
+function createPokemonResource(pokemonName: string) {
+  return createResource(fetchPokemon(pokemonName))
+}
+
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
+  const [isPending, startTransition] = React.useTransition()
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
 
-  const [pokemonResource, isPending] = usePokemonResource(pokemonName)
+  React.useEffect(() => {
+    if (!pokemonName) {
+      setPokemonResource(null)
+      return
+    }
+    startTransition(() => {
+      setPokemonResource(createPokemonResource(pokemonName))
+    })
+  }, [pokemonName, startTransition])
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 

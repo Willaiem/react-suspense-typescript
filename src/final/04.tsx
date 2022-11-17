@@ -1,38 +1,30 @@
-// Suspense with a custom hook
-// http://localhost:3000/isolated/final/06.js
+// Cache resources
+// http://localhost:3000/isolated/final/04.js
 
 import * as React from 'react'
 import {
-  fetchPokemon,
-  getImageUrlForPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  PokemonErrorBoundary,
+  fetchPokemon, PokemonDataView,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
-import {createResource, preloadImage} from '../utils'
+import { createResource } from '../utils'
 
-function PokemonInfo({pokemonResource}) {
-  const pokemon = pokemonResource.data.read()
+type PokemonResource = ReturnType<typeof createPokemonResource>
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
+  const pokemon = pokemonResource.read()
   return (
     <div>
       <div className="pokemon-info__img-wrapper">
-        <img src={pokemonResource.image.read()} alt={pokemon.name} />
+        <img src={pokemon.image} alt={pokemon.name} />
       </div>
       <PokemonDataView pokemon={pokemon} />
     </div>
   )
 }
 
-const SUSPENSE_CONFIG = {
-  timeoutMs: 4000,
-  busyDelayMs: 300,
-  busyMinDurationMs: 700,
-}
+const pokemonResourceCache: Record<string, PokemonResource> = {}
 
-const pokemonResourceCache = {}
-
-function getPokemonResource(name) {
+function getPokemonResource(name: string) {
   const lowerName = name.toLowerCase()
   let resource = pokemonResourceCache[lowerName]
   if (!resource) {
@@ -42,15 +34,14 @@ function getPokemonResource(name) {
   return resource
 }
 
-function createPokemonResource(pokemonName) {
-  const data = createResource(fetchPokemon(pokemonName))
-  const image = createResource(preloadImage(getImageUrlForPokemon(pokemonName)))
-  return {data, image}
+function createPokemonResource(pokemonName: string) {
+  return createResource(fetchPokemon(pokemonName))
 }
 
-function usePokemonResource(pokemonName) {
-  const [pokemonResource, setPokemonResource] = React.useState(null)
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
+function App() {
+  const [pokemonName, setPokemonName] = React.useState('')
+  const [isPending, startTransition] = React.useTransition()
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
@@ -62,15 +53,7 @@ function usePokemonResource(pokemonName) {
     })
   }, [pokemonName, startTransition])
 
-  return [pokemonResource, isPending]
-}
-
-function App() {
-  const [pokemonName, setPokemonName] = React.useState('')
-
-  const [pokemonResource, isPending] = usePokemonResource(pokemonName)
-
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 

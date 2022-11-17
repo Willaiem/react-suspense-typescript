@@ -2,9 +2,10 @@
 // http://localhost:3000/isolated/final/01.js
 
 import * as React from 'react'
-import {fetchPokemon, PokemonDataView} from '../pokemon'
+import { PokemonData } from 'types'
+import { fetchPokemon, PokemonDataView } from '../pokemon'
 
-let pokemon
+let pokemon: PokemonData | undefined
 let pokemonPromise = fetchPokemon('pikachu').then(p => (pokemon = p))
 
 function PokemonInfo() {

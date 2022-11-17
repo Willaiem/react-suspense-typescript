@@ -1,17 +1,16 @@
-// useTransition for improved loading states
-// http://localhost:3000/isolated/final/03.js
+// Refactor useEffect to Suspense
+// http://localhost:3000/isolated/final/02.js
 
 import * as React from 'react'
 import {
-  fetchPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  PokemonErrorBoundary,
+  fetchPokemon, PokemonDataView,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
-import {createResource} from '../utils'
+import { createResource } from '../utils'
 
-function PokemonInfo({pokemonResource}) {
+type PokemonResource = ReturnType<typeof createPokemonResource>
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
   const pokemon = pokemonResource.read()
   return (
     <div>
@@ -23,28 +22,23 @@ function PokemonInfo({pokemonResource}) {
   )
 }
 
-const SUSPENSE_CONFIG = {timeoutMs: 4000}
-
-function createPokemonResource(pokemonName) {
+function createPokemonResource(pokemonName: string) {
   return createResource(fetchPokemon(pokemonName))
 }
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
-  const [pokemonResource, setPokemonResource] = React.useState(null)
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
       setPokemonResource(null)
       return
     }
-    startTransition(() => {
-      setPokemonResource(createPokemonResource(pokemonName))
-    })
-  }, [pokemonName, startTransition])
+    setPokemonResource(createPokemonResource(pokemonName))
+  }, [pokemonName])
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 
@@ -56,7 +50,7 @@ function App() {
     <div className="pokemon-info-app">
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
-      <div style={{opacity: isPending ? 0.6 : 1}} className="pokemon-info">
+      <div className="pokemon-info">
         {pokemonResource ? (
           <PokemonErrorBoundary
             onReset={handleReset}
