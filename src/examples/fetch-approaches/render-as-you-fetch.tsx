@@ -3,9 +3,7 @@
 
 import * as React from 'react'
 import {
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonErrorBoundary,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../../pokemon'
 import createPokemonInfoResource from './lazy/pokemon-info-render-as-you-fetch.data'
 
@@ -13,15 +11,11 @@ const PokemonInfo = React.lazy(() =>
   import('./lazy/pokemon-info-render-as-you-fetch'),
 )
 
-const SUSPENSE_CONFIG = {
-  timeoutMs: 4000,
-  busyDelayMs: 300,
-  busyMinDurationMs: 700,
-}
+type PokemonResource = ReturnType<typeof createPokemonInfoResource>
 
-const pokemonResourceCache = {}
+const pokemonResourceCache: Record<string, PokemonResource> = {}
 
-function getPokemonResource(name) {
+function getPokemonResource(name: string) {
   const lowerName = name.toLowerCase()
   let resource = pokemonResourceCache[lowerName]
   if (!resource) {
@@ -33,8 +27,8 @@ function getPokemonResource(name) {
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
-  const [pokemonResource, setPokemonResource] = React.useState(null)
+  const [isPending, startTransition] = React.useTransition()
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
@@ -46,7 +40,7 @@ function App() {
     })
   }, [pokemonName, startTransition])
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 
@@ -56,7 +50,7 @@ function App() {
 
   return (
     <div>
-      <h1 style={{textAlign: 'center'}}>
+      <h1 style={{ textAlign: 'center' }}>
         {'Render as you fetch '}
         <span role="img" aria-label="thumbs up">
           👍

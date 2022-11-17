@@ -3,19 +3,16 @@
 
 import * as React from 'react'
 import {
-  PokemonForm,
-  PokemonInfoFallback,
-  PokemonErrorBoundary,
+  PokemonErrorBoundary, PokemonForm,
+  PokemonInfoFallback
 } from '../../pokemon'
 
-const PokemonInfo = React.lazy(() =>
-  import('./lazy/pokemon-info-fetch-on-render'),
-)
+const PokemonInfo = React.lazy(() => import('./lazy/pokemon-info-fetch-on-render'))
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 
@@ -25,7 +22,7 @@ function App() {
 
   return (
     <div>
-      <h1 style={{textAlign: 'center'}}>
+      <h1 style={{ textAlign: 'center' }}>
         {'Fetch on render '}
         <span role="img" aria-label="thumbs down">
           👎

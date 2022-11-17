@@ -1,9 +1,12 @@
 // http://localhost:3000/isolated/examples/fetch-approaches/lazy/pokemon-info-render-as-you-fetch.js
 
-import * as React from 'react'
-import {PokemonDataView} from '../../../pokemon'
+import { PokemonData } from 'types'
+import { PokemonDataView } from '../../../pokemon'
 
-function PokemonInfo({pokemonResource}) {
+type DataResource = { read: () => PokemonData }
+type ImageResource = { read: () => string }
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: { data: DataResource, image: ImageResource } }) {
   const pokemon = pokemonResource.data.read()
   return (
     <div>
