@@ -1,8 +1,16 @@
 import * as React from 'react'
-import {ErrorBoundary} from 'react-error-boundary'
-import {createResource, preloadImage} from './utils'
+import { ErrorBoundary, ErrorBoundaryProps } from 'react-error-boundary'
+import type { PokemonData } from './types'
+import { createResource, preloadImage } from './utils'
 
 import pkg from '../package.json'
+
+type PokemonResponse = {
+  data: {
+    pokemon: PokemonData
+  }
+  errors?: Error[]
+}
 
 const homepage = process.env.NODE_ENV === 'production' ? pkg.homepage : '/'
 
@@ -14,9 +22,9 @@ const fallbackImgUrl = `${homepage}img/pokemon/fallback-pokemon.jpg`
 preloadImage(`${homepage}img/pokeball.png`)
 preloadImage(fallbackImgUrl)
 
-const sleep = t => new Promise(resolve => setTimeout(resolve, t))
+const sleep = (t: number) => new Promise(resolve => setTimeout(resolve, t))
 
-const formatDate = date =>
+const formatDate = (date: Date) =>
   `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')} ${String(
     date.getSeconds(),
   ).padStart(2, '0')}.${String(date.getMilliseconds()).padStart(3, '0')}`
@@ -26,7 +34,7 @@ const formatDate = date =>
 const graphql = String.raw
 
 // the delay argument is for faking things out a bit
-function fetchPokemon(name, delay = 1500) {
+function fetchPokemon(name: string, delay: number = 1500) {
   const endTime = Date.now() + delay
   const pokemonQuery = graphql`
     query PokemonInfo($name: String) {
@@ -46,6 +54,7 @@ function fetchPokemon(name, delay = 1500) {
     }
   `
 
+
   return window
     .fetch('https://graphql-pokemon2.vercel.app', {
       // learn more about this API here: https://graphql-pokemon2.vercel.app
@@ -55,10 +64,10 @@ function fetchPokemon(name, delay = 1500) {
       },
       body: JSON.stringify({
         query: pokemonQuery,
-        variables: {name: name.toLowerCase()},
+        variables: { name: name.toLowerCase() },
       }),
     })
-    .then(response => response.json())
+    .then(response => response.json() as Promise<PokemonResponse>)
     .then(async response => {
       await sleep(endTime - Date.now())
       return response
@@ -79,36 +88,39 @@ function fetchPokemon(name, delay = 1500) {
     })
 }
 
-function getImageUrlForPokemon(pokemonName) {
+function getImageUrlForPokemon(pokemonName: PokemonData['name']) {
   return `${homepage}img/pokemon/${pokemonName.toLowerCase()}.jpg`
 }
 
-async function fetchUser(pokemonName, delay = 0) {
+async function fetchUser(pokemonName: PokemonData['name'], delay: number = 0) {
   await sleep(delay)
   const lowerName = pokemonName.toLowerCase()
   const response = await window.fetch(`/pokemoney/${lowerName}`, {
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
   })
-  const result = response.json()
+  const result = response.json() as Promise<PokemonData>
   return result
 }
 
-function PokemonInfoFallback({name}) {
+function PokemonInfoFallback({ name }: { name: string }) {
   const initialName = React.useRef(name).current
-  const fallbackPokemonData = {
+  const fallbackPokemonData: PokemonData = {
+    id: 'loading-pokemon',
     name: initialName,
     number: 'XXX',
+    image: '/img/pokemon/fallback-pokemon.jpg',
+    color: 'black',
     attacks: {
       special: [
-        {name: 'Loading Attack 1', type: 'Type', damage: 'XX'},
-        {name: 'Loading Attack 2', type: 'Type', damage: 'XX'},
+        { name: 'Loading Attack 1', type: 'Type', damage: -1 },
+        { name: 'Loading Attack 2', type: 'Type', damage: -1 },
       ],
     },
     fetchedAt: 'loading...',
   }
   return (
     <div>
-      <div className="pokemon-info__img-wrapper">
+      <div className="pokemon-info__img-wrapper" >
         <img src={fallbackImgUrl} alt={initialName} />
       </div>
       <PokemonDataView pokemon={fallbackPokemonData} />
@@ -116,9 +128,12 @@ function PokemonInfoFallback({name}) {
   )
 }
 
-function PokemonDataView({pokemon}) {
+function PokemonDataView({ pokemon }: { pokemon: PokemonData }) {
   return (
-    <>
+    <div>
+      <div className="pokemon-info__img-wrapper">
+        <img src={pokemon.image} alt={pokemon.name} />
+      </div>
       <section>
         <h2>
           {pokemon.name}
@@ -131,21 +146,26 @@ function PokemonDataView({pokemon}) {
             <li key={attack.name}>
               <label>{attack.name}</label>:{' '}
               <span>
-                {attack.damage} <small>({attack.type})</small>
+                {attack.damage < 0 ? 'XX' : attack.damage}{' '}
+                <small>({attack.type})</small>
               </span>
             </li>
           ))}
         </ul>
       </section>
       <small className="pokemon-info__fetch-time">{pokemon.fetchedAt}</small>
-    </>
+    </div>
   )
 }
 
 function PokemonForm({
   pokemonName: externalPokemonName,
-  initialPokemonName = externalPokemonName || '',
+  initialPokemonName = externalPokemonName ?? '',
   onSubmit,
+}: {
+  pokemonName?: string
+  initialPokemonName?: string
+  onSubmit: (newPokemonName: string) => void
 }) {
   const [pokemonName, setPokemonName] = React.useState(initialPokemonName)
 
@@ -161,19 +181,20 @@ function PokemonForm({
     }
   }, [externalPokemonName])
 
-  function handleChange(e) {
-    setPokemonName(e.target.value)
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setPokemonName(e.currentTarget.value)
   }
 
-  function handleSubmit(e) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     onSubmit(pokemonName)
   }
 
-  function handleSelect(newPokemonName) {
+  function handleSelect(newPokemonName: string) {
     setPokemonName(newPokemonName)
     onSubmit(newPokemonName)
   }
+
 
   return (
     <form onSubmit={handleSubmit} className="pokemon-form">
@@ -221,18 +242,14 @@ function PokemonForm({
   )
 }
 
-const SUSPENSE_CONFIG = {
-  timeoutMs: 4000,
-  busyDelayMs: 300,
-  busyMinDurationMs: 700,
-}
+type PokemonResource = ReturnType<typeof createPokemonResource>
 
-const PokemonResourceCacheContext = React.createContext({})
+const PokemonResourceCacheContext = React.createContext<Record<string, PokemonResource | undefined>>({})
 
 function usePokemonResourceCache() {
   const cache = React.useContext(PokemonResourceCacheContext)
   return React.useCallback(
-    name => {
+    (name: string) => {
       const lowerName = name.toLowerCase()
       let resource = cache[lowerName]
       if (!resource) {
@@ -245,15 +262,15 @@ function usePokemonResourceCache() {
   )
 }
 
-function createPokemonResource(pokemonName) {
+function createPokemonResource(pokemonName: PokemonData['name']) {
   const data = createResource(fetchPokemon(pokemonName))
   const image = createResource(preloadImage(getImageUrlForPokemon(pokemonName)))
-  return {data, image}
+  return { data, image }
 }
 
-function usePokemonResource(pokemonName) {
-  const [pokemonResource, setPokemonResource] = React.useState(null)
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
+function usePokemonResource(pokemonName: PokemonData['name']) {
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
+  const [isPending, startTransition] = React.useTransition()
   const getPokemonResource = usePokemonResourceCache()
 
   React.useEffect(() => {
@@ -266,14 +283,20 @@ function usePokemonResource(pokemonName) {
     })
   }, [getPokemonResource, pokemonName, startTransition])
 
-  return [pokemonResource, isPending]
+  return [pokemonResource, isPending] as const
 }
 
-function ErrorFallback({canReset, error, resetErrorBoundary}) {
+type TErrorFallback = {
+  canReset: boolean
+  error: Error
+  resetErrorBoundary: () => void
+}
+
+function ErrorFallback({ canReset, error, resetErrorBoundary }: TErrorFallback) {
   return (
     <div role="alert">
       There was an error:{' '}
-      <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+      <pre style={{ whiteSpace: 'normal' }}>{error.message}</pre>
       {canReset ? (
         <button onClick={resetErrorBoundary}>Try again</button>
       ) : null}
@@ -281,7 +304,11 @@ function ErrorFallback({canReset, error, resetErrorBoundary}) {
   )
 }
 
-function PokemonErrorBoundary(parentProps) {
+type TPokemonErrorBoundaryProps = Omit<ErrorBoundaryProps, 'FallbackComponent' | 'fallback' | 'fallbackRender'> & {
+  children: React.ReactNode
+}
+
+function PokemonErrorBoundary(parentProps: TPokemonErrorBoundaryProps) {
   const canReset = Boolean(parentProps.onReset || parentProps.resetKeys)
   return (
     <ErrorBoundary
