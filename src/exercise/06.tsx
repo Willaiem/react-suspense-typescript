@@ -4,15 +4,14 @@
 import * as React from 'react'
 import {
   fetchPokemon,
-  getImageUrlForPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  PokemonErrorBoundary,
+  getImageUrlForPokemon, PokemonDataView,
+  PokemonErrorBoundary, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
-import {createResource, preloadImage} from '../utils'
+import { createResource, preloadImage } from '../utils'
 
-function PokemonInfo({pokemonResource}) {
+type PokemonResource = ReturnType<typeof createPokemonResource>
+
+function PokemonInfo({ pokemonResource }: { pokemonResource: PokemonResource }) {
   const pokemon = pokemonResource.data.read()
   return (
     <div>
@@ -24,15 +23,9 @@ function PokemonInfo({pokemonResource}) {
   )
 }
 
-const SUSPENSE_CONFIG = {
-  timeoutMs: 4000,
-  busyDelayMs: 300,
-  busyMinDurationMs: 700,
-}
+const pokemonResourceCache: Record<string, PokemonResource> = {}
 
-const pokemonResourceCache = {}
-
-function getPokemonResource(name) {
+function getPokemonResource(name: string) {
   const lowerName = name.toLowerCase()
   let resource = pokemonResourceCache[lowerName]
   if (!resource) {
@@ -42,17 +35,17 @@ function getPokemonResource(name) {
   return resource
 }
 
-function createPokemonResource(pokemonName) {
+function createPokemonResource(pokemonName: string) {
   const data = createResource(fetchPokemon(pokemonName))
   const image = createResource(preloadImage(getImageUrlForPokemon(pokemonName)))
-  return {data, image}
+  return { data, image }
 }
 
 function App() {
   const [pokemonName, setPokemonName] = React.useState('')
   // 🐨 move these two lines to a custom hook called usePokemonResource
-  const [startTransition, isPending] = React.useTransition(SUSPENSE_CONFIG)
-  const [pokemonResource, setPokemonResource] = React.useState(null)
+  const [isPending, startTransition] = React.useTransition()
+  const [pokemonResource, setPokemonResource] = React.useState<PokemonResource | null>(null)
   // 🐨 call usePokemonResource with the pokemonName.
   //    It should return both the pokemonResource and isPending
 
@@ -67,7 +60,7 @@ function App() {
     })
   }, [pokemonName, startTransition])
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 

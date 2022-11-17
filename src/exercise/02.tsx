@@ -2,41 +2,62 @@
 // http://localhost:3000/isolated/exercise/02.js
 
 import * as React from 'react'
+import { PokemonData } from 'types'
 import {
-  fetchPokemon,
-  PokemonInfoFallback,
-  PokemonForm,
-  PokemonDataView,
-  // 🐨 you'll need PokemonErrorBoundary here
+  fetchPokemon, PokemonDataView, PokemonForm, PokemonInfoFallback
 } from '../pokemon'
 // 🐨 you'll need createResource from ../utils
 
 // 🐨 Your goal is to refactor this traditional useEffect-style async
 // interaction to suspense with resources. Enjoy!
 
-function PokemonInfo({pokemonName}) {
+type PokemonInfoState = {
+  status: 'pending' | 'success' | 'error'
+  pokemon: PokemonData | null
+  error: Error | null
+}
+
+type PokemonInfoAction =
+  | {
+    status: 'pending'
+    error?: null
+    pokemon?: null
+  }
+  | {
+    status: 'success'
+    pokemon: PokemonData
+  }
+  | {
+    status: 'error'
+    error: Error
+  }
+
+type PokemonInfoReducer = React.Reducer<PokemonInfoState, PokemonInfoAction>
+
+
+function PokemonInfo({ pokemonName }: { pokemonName: string }) {
   // 💣 you're pretty much going to delete all this stuff except for the one
   // place where 🐨 appears
-  const [state, setState] = React.useReducer((s, a) => ({...s, ...a}), {
+  const [state, setState] = React.useReducer<PokemonInfoReducer>((s, a) => ({ ...s, ...a }), {
     pokemon: null,
     error: null,
     status: 'pending',
   })
 
-  const {pokemon, error, status} = state
+  const { pokemon, error, status } = state
 
   React.useEffect(() => {
     let current = true
-    setState({status: 'pending'})
+    setState({ status: 'pending' })
     fetchPokemon(pokemonName).then(
       p => {
-        if (current) setState({pokemon: p, status: 'success'})
+        if (current) setState({ pokemon: p, status: 'success' })
       },
       e => {
-        if (current) setState({error: e, status: 'error'})
+        if (current) setState({ error: e, status: 'error' })
       },
     )
-    return () => (current = false)
+    return () => { current = false }
   }, [pokemonName])
 
   // 💰 This will be the fallback prop of <React.Suspense />
@@ -45,17 +66,17 @@ function PokemonInfo({pokemonName}) {
   }
 
   // 💰 This is the same thing the PokemonErrorBoundary renders
-  if (status === 'error') {
+  if (status === 'error' && error) {
     return (
       <div>
         There was an error.
-        <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
+        <pre style={{ whiteSpace: 'normal' }}>{error.message}</pre>
       </div>
     )
   }
 
   // 💰 this is the part that will suspend
-  if (status === 'success') {
+  if (status === 'success' && pokemon) {
     // 🐨 instead of accepting the pokemonName as a prop to this component
     // you'll accept a pokemonResource.
     // 💰 you'll get the pokemon from: pokemonResource.read()
@@ -70,6 +91,8 @@ function PokemonInfo({pokemonName}) {
       </div>
     )
   }
+
+  throw new Error('Impossible...')
 }
 
 function App() {
@@ -80,7 +103,7 @@ function App() {
   // with fetchPokemon whenever the pokemonName changes.
   // If the pokemonName is falsy, then set the pokemon resource to null
 
-  function handleSubmit(newPokemonName) {
+  function handleSubmit(newPokemonName: string) {
     setPokemonName(newPokemonName)
   }
 

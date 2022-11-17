@@ -1,9 +1,6 @@
 // Simple Data-fetching
-// http://localhost:3000/isolated/exercise/01.js
-
-import * as React from 'react'
 // 🐨 you'll also need to get the fetchPokemon function from ../pokemon:
-import {PokemonDataView} from '../pokemon'
+import { PokemonDataView } from '../pokemon'
 
 // 💰 use it like this: fetchPokemon(pokemonName).then(handleSuccess, handleFailure)
 
@@ -13,8 +10,11 @@ import {PokemonDataView} from '../pokemon'
 const pokemon = {
   name: 'TODO',
   number: 'TODO',
+  image: 'TODO',
+  id: 'TODO',
+  color: 'TODO',
   attacks: {
-    special: [{name: 'TODO', type: 'TODO', damage: 'TODO'}],
+    special: [{ name: 'TODO', type: 'TODO', damage: -1 }],
   },
   fetchedAt: 'TODO',
 }
