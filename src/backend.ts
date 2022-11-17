@@ -1,12 +1,12 @@
-import {graphql, rest} from '@kentcdodds/react-workshop-app/server'
+import { graphql, rest } from '@kentcdodds/react-workshop-app/server'
 
 const pokemonApi = graphql.link('https://graphql-pokemon2.vercel.app/')
 
 export const handlers = [
-  rest.get('/pokemoney/:pokemonName', (req, res, ctx) => {
-    const {pokemonName} = req.params
+  rest.get<{}, any, { pokemonName: keyof typeof allUsers }>('/pokemoney/:pokemonName', (req, res, ctx) => {
+    const { pokemonName } = req.params
 
-    const upperName = name =>
+    const upperName = (name: string) =>
       `${name.slice(0, 1).toUpperCase()}${name.slice(1)}`
 
     const pokemonTransactions = allTransactions.filter(
@@ -29,10 +29,12 @@ export const handlers = [
       }),
     )
   }),
-  pokemonApi.query('PokemonInfo', (req, res, ctx) => {
-    const pokemon = allPokemon[req.variables.name.toLowerCase()]
+  pokemonApi.query<Record<string, any>, { name: keyof typeof allPokemon }>('PokemonInfo', (req, res, ctx) => {
+    const name = req.variables.name.toLowerCase() as keyof typeof allPokemon
+    const pokemon = allPokemon[name]
+
     if (pokemon) {
-      return res(ctx.status(200), ctx.data({pokemon}))
+      return res(ctx.status(200), ctx.data({ pokemon }))
     } else {
       const pokemonNames = Object.keys(allPokemon)
       const randomName =
